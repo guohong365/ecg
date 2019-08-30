@@ -1,0 +1,14 @@
+ minbpm  40  
+ maxbpm  180 
+ minQRS  0.04 
+ maxQRS  0.2 
+qrsFreq  13
+ ampQRS  0
+ minUmV  0.2
+  minPQ  0.07 
+  maxPQ  0.20 
+  minQT  0.22 
+  maxQT  0.45 
+  pFreq  9.0  
+  tFreq  3.0
+biTwave  0
