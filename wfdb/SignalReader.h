@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "wfdblib.h"
 #include <limits.h>
 #include <time.h>
 #include <string>
+#include "WFDBFile.h"
 
 namespace wfdb{
 	typedef struct _signal_info
@@ -11,9 +12,9 @@ namespace wfdb{
 		std::string fname;	/* filename of signal file */
 		std::string desc;		/* signal description */
 		std::string units;	/* physical units (mV unless otherwise specified) */
-		WFDB_Gain gain;	/* gain (ADC units/physical unit, 0: uncalibrated) */
-		WFDB_Sample initval; 	/* initial value (that of sample number 0) */
-		WFDB_Group group;	/* signal group number */
+		GainType gain;	/* gain (ADC units/physical unit, 0: uncalibrated) */
+		SampleType initVale; 	/* initial value (that of sample number 0) */
+		GroupType group;	/* signal group number */
 		int fmt;		/* format (8, 16, etc.) */
 		int spf;		/* samples per frame (>1 for oversampled signals) */
 		int bsize;		/* block size (for character special files only) */
@@ -26,6 +27,7 @@ namespace wfdb{
 
 class SignalOperator
 {
+	Context* _context;
 public:
 	/* Shared local data */
 
@@ -53,13 +55,13 @@ public:
 	   signals, but only one set of these parameters is available at any given time
 	   for use by the strtim, timstr, etc., conversion functions.
 	*/
-	 WFDB_Frequency ffreq;	/* frame rate (frames/second) */
-	 WFDB_Frequency ifreq;	/* samples/second/signal returned by getvec */
-	 WFDB_Frequency sfreq;	/* samples/second/signal read by getvec */
-	 WFDB_Frequency cfreq;	/* counter frequency (ticks/second) */
+	 FrequencyType ffreq;	/* frame rate (frames/second) */
+	 FrequencyType ifreq;	/* samples/second/signal returned by getvec */
+	 FrequencyType sfreq;	/* samples/second/signal read by getvec */
+	 FrequencyType cfreq;	/* counter frequency (ticks/second) */
 	 long btime;		/* base time (milliseconds since midnight) */
-	 WFDB_Date bdate;		/* base date (Julian date) */
-	 WFDB_Time nsamples;	/* duration of signals (in samples) */
+	 DateType bdate;		/* base date (Julian date) */
+	 TimeType nsamples;	/* duration of signals (in samples) */
 	 double bcount;		/* base count (counter value at sample 0) */
 	 long prolog_bytes;	/* length of prolog, as told to wfdbsetstart
 					   (used only by setheader, if output signal
@@ -90,8 +92,8 @@ public:
 	int in_msrec;		/* current input record is: 0: a single-segment
 					   record; 1: a multi-segment record */
 	long msbtime;		/* base time for multi-segment record */
-	WFDB_Date msbdate;	/* base date for multi-segment record */
-	WFDB_Time msnsamples;	/* duration of multi-segment record */
+	DateType msbdate;	/* base date for multi-segment record */
+	TimeType msnsamples;	/* duration of multi-segment record */
 	WFDB_Seginfo *segarray, *segp, *segend;
 	/* beginning, current segment, end pointers */
 
@@ -104,7 +106,7 @@ public:
 					   per input frame */
 	struct isdata {		/* unique for each input signal */
 		SignalInfo info;		/* input signal information */
-		WFDB_Sample samp;		/* most recent sample read */
+		SampleType samp;		/* most recent sample read */
 		int skew;			/* intersignal skew (in frames) */
 	} **isd;
 	struct igdata {		/* shared by all signals in a group (file) */
@@ -112,8 +114,7 @@ public:
 		int datb;			/* more raw data used for bit-packed formats */
 		WFDB_FILE *fp;		/* file pointer for an input signal group */
 		long start;			/* signal file byte offset to sample 0 */
-		int bsize;			/* if non-zero, all reads from the input file
-					   are in multiples of bsize bytes */
+		int bsize;			/* if non-zero, all reads from the input file  are in multiples of bsize bytes */
 		char *buf;			/* pointer to input buffer */
 		char *bp;			/* pointer to next location in buf[] */
 		char *be;			/* pointer to input buffer endpoint */
@@ -121,14 +122,14 @@ public:
 		char seek;			/* 0: do not seek on file, 1: seeks permitted */
 		int stat;			/* signal file status flag */
 	} **igd;
-	WFDB_Sample *tvector;	/* getvec workspace */
-	WFDB_Sample *uvector;	/* isgsettime workspace */
-	WFDB_Sample *vvector;	/* tnextvec workspace */
+	SampleType *tvector;	/* getvec workspace */
+	SampleType *uvector;	/* isgsettime workspace */
+	SampleType *vvector;	/* tnextvec workspace */
 	int tuvlen;		/* lengths of tvector and uvector in samples */
-	WFDB_Time istime;	/* time of next input sample */
+	TimeType istime;	/* time of next input sample */
 	int ibsize;		/* default input buffer size */
 	unsigned skewmax;	/* max skew (frames) between any 2 signals */
-	WFDB_Sample *dsbuf;	/* deskewing buffer */
+	SampleType *dsbuf;	/* deskewing buffer */
 	int dsbi;		/* index to oldest sample in dsbuf (if < 0,
 					   dsbuf does not contain valid data) */
 	unsigned dsblen;		/* capacity of dsbuf, in samples */
@@ -136,7 +137,7 @@ public:
 	int gvmode = DEFWFDBGVMODE;	/* getvec mode */
 	int gvc;			/* getvec sample-within-frame counter */
 	int isedf;		/* if non-zero, record is stored as EDF/EDF+ */
-	WFDB_Sample *sbuf = NULL;	/* buffer used by sample() */
+	SampleType *sbuf = NULL;	/* buffer used by sample() */
 	int sample_vflag;	/* if non-zero, last value returned by sample()
 					   was valid */
 
@@ -149,7 +150,7 @@ public:
 	WFDB_FILE *outinfo;	/* file pointer for output info file */
 	struct osdata {		/* unique for each output signal */
 		SignalInfo info;		/* output signal information */
-		WFDB_Sample samp;		/* most recent sample written */
+		SampleType samp;		/* most recent sample written */
 		int skew;			/* skew to be written by setheader() */
 	} **osd;
 	struct ogdata {		/* shared by all signals in a group (file) */
@@ -169,7 +170,7 @@ public:
 		char nrewind;		/* number of bytes to seek backwards
 					   after flushing */
 	} **ogd;
-	WFDB_Time ostime;	/* time of next output sample */
+	TimeType ostime;	/* time of next output sample */
 	int obsize;		/* default output buffer size */
 
 	/* These variables relate to info strings. */
@@ -239,10 +240,9 @@ public:
 
 	static int isfmt(int f)
 	{
-		int i;
 		static int fmt_list[WFDB_NFMTS] = WFDB_FMT_LIST;
 
-		for (i = 0; i < WFDB_NFMTS; i++)
+		for (int i = 0; i < WFDB_NFMTS; i++)
 			if (f == fmt_list[i]) return (1);
 		return (0);
 	}
@@ -288,71 +288,70 @@ public:
 	int nvsig;
 	int tspf;
 	int vspfmax;
-	struct isdata **vsd;
-	WFDB_Sample *ovec;
+	std::vector<isdata*> vsd;
+	SampleType *ovec;
 
-	static struct sigmapinfo {
-		char *desc;
+	struct SignalMapInfo {
+		std::string desc;
 		double gain, scale, offset;
-		WFDB_Sample sample_offset;
-		WFDB_Sample baseline;
+		SampleType sample_offset;
+		SampleType baseline;
 		int index;
 		int spf;
-	} *smi;
+	}*smi;
 
-	void sigmap_cleanup(void)
+	void sigmap_cleanup()
 	{
-		int i;
-
 		need_sigmap = nvsig = tspf = vspfmax = 0;
 		SFREE(ovec);
 		if (smi) {
-			for (i = 0; i < tspf; i += smi[i].spf)
-				SFREE(smi[i].desc);
 			SFREE(smi);
 		}
 
-		if (vsd) {
+		if (vsd.size()) {
 			struct isdata *is;
 
 			while (maxvsig)
-				if (is = vsd[--maxvsig]) {
-					SFREE(is);
+				if ((is = vsd[--maxvsig])) {
+					delete is;
 				}
-			SFREE(vsd);
+			vsd.clear();
 		}
 	}
 
-	int make_vsd(void)
+	int make_vsd()
 	{
-		int i;
-
 		if (nvsig != nisig) {
-			wfdb_error("make_vsd: oops! nvsig = %d, nisig = %d\n", nvsig, nisig);
+			_context->error("make_vsd: oops! nvsig = %d, nisig = %d\n", nvsig, nisig);
 			return (-1);
 		}
 		if (maxvsig < nvsig) {
 			unsigned m = maxvsig;
-
-			SREALLOC(vsd, nvsig, sizeof(struct isdata *));
 			while (m < nvsig) {
-				SUALLOC(vsd[m], 1, sizeof(struct isdata));
+				vsd.push_back(new isdata);
 				m++;
 			}
 			maxvsig = nvsig;
 		}
 
-		for (i = 0; i < nvsig; i++)
+		for (int i = 0; i < nvsig; i++)
 			copysi(&vsd[i]->info, &isd[i]->info);
 
 		return (nvsig);
 	}
 
-	int sigmap_init(void)
+	int sigmap_init()
 	{
-		int i, j, k, kmax, s, ivmin, ivmax;
-		double ovmin, ovmax;
-		struct sigmapinfo *ps;
+		int i;
+		int j;
+		int k;
+		int kmax;
+		int s;
+		int ivmin;
+		int ivmax;
+		double ovmin;
+		double ovmax;
+		SignalMapInfo *ps;
 
 		/* is this the layout segment?  if so, set up output side of map */
 		if (in_msrec && ovec == NULL && isd[0]->info.nsamp == 0L) {
@@ -364,9 +363,10 @@ public:
 			vspfmax = ispfmax;
 			for (s = tspf = 0; s < nisig; s++)
 				tspf += isd[s]->info.spf;
-			SALLOC(smi, tspf, sizeof(struct sigmapinfo));
+			smi=new SignalMapInfo[tspf];
+
 			for (i = s = 0; i < nisig; i++) {
-				SSTRCPY(smi[s].desc, isd[i]->info.desc);
+				smi[s].desc= isd[i]->info.desc;
 				smi[s].gain = isd[i]->info.gain;
 				smi[s].baseline = isd[i]->info.baseline;
 				k = smi[s].spf = isd[i]->info.spf;
@@ -374,7 +374,7 @@ public:
 					smi[s + j] = smi[s];
 				s += k;
 			}
-			SALLOC(ovec, tspf, sizeof(WFDB_Sample));
+			ovec= new SampleType[tspf];
 			return (make_vsd());
 		}
 		if (need_sigmap) {	/* set up the input side of the map */
@@ -391,11 +391,9 @@ public:
 
 			for (i = j = 0; i < nisig; j += isd[i++]->info.spf)
 				for (s = 0; s < tspf; s += smi[s].spf)
-					if (strcmp(smi[s].desc, isd[i]->info.desc) == 0) {
+					if (smi[s].desc== isd[i]->info.desc) {
 						if ((kmax = smi[s].spf) != isd[i]->info.spf) {
-							wfdb_error(
-								"sigmap_init: unexpected spf for signal %d in segment %s\n",
-								i, segp->recname);
+							_context->error("sigmap_init: unexpected spf for signal %d in segment %s\n",i, segp->recname);
 							if (kmax > isd[i]->info.spf)
 								kmax = isd[i]->info.spf;
 						}
@@ -404,7 +402,7 @@ public:
 							ps->index = j + k;
 							ps->scale = ps->gain / isd[i]->info.gain;
 							if (ps->scale < 1.0)
-								wfdb_error(
+								_context->error(
 									"sigmap_init: loss of precision in signal %d in segment %s\n",
 									i, segp->recname);
 							ps->offset = ps->baseline -
@@ -454,7 +452,7 @@ public:
 		return (0);
 	}
 
-	int sigmap(WFDB_Sample *vector)
+	int sigmap(SampleType *vector)
 	{
 		int i;
 		double v;
@@ -477,20 +475,20 @@ public:
 					   positive and the following calculation cannot
 					   overflow, we can avoid additional floating-point
 					   operations. */
-					vector[i] = (WFDB_Sample)v + smi[i].sample_offset;
+					vector[i] = (SampleType)v + smi[i].sample_offset;
 				}
 				else {
 					/* Slow case: we need to check bounds and handle
 					   negative values. */
 					if (v >= 0) {
 						if (v <= WFDB_SAMPLE_MAX)
-							vector[i] = (WFDB_Sample)v;
+							vector[i] = (SampleType)v;
 						else
 							vector[i] = WFDB_SAMPLE_MAX;
 					}
 					else {
 						if (v >= WFDB_SAMPLE_MIN) {
-							vector[i] = (WFDB_Sample)v;
+							vector[i] = (SampleType)v;
 							if (vector[i] > v)
 								vector[i]--;
 						}
@@ -524,7 +522,7 @@ public:
 		else if (strncmp(buf + 1, "BIOSEMI", 7) == 0)
 			format = 24;	/* BDF */
 		else {
-			wfdb_error("init: '%s' is not EDF or EDF+\n", edf_fname);
+			_context->error("init: '%s' is not EDF or EDF+\n", edf_fname);
 			return (-2);
 		}
 
@@ -552,7 +550,7 @@ public:
 		sscanf(buf + 4, "%d", &nsig);
 
 		if (nsig < 1 || (nsig + 1) * 256 != offset) {
-			wfdb_error("init: '%s' is not EDF or EDF+\n", edf_fname);
+			_context->error("init: '%s' is not EDF or EDF+\n", edf_fname);
 			return (-2);
 		}
 
@@ -676,27 +674,27 @@ public:
 
 	int readheader(const char *record)
 	{
-		char linebuf[256], *p, *q;
-		WFDB_Frequency f;
-		WFDB_Signal s;
-		WFDB_Time ns;
-		unsigned int i, nsig;
+		char linebuf[256];
+		char *p;
+		FrequencyType f;
+		SignalType s;
+		TimeType ns;
+		unsigned int i;
+		unsigned int nsig;
 		static char sep[] = " \t\n\r";
 
 		/* If another input header file was opened, close it. */
 		if (hheader) {
 			(void)wfdb_fclose(hheader);
-			hheader = NULL;
+			hheader = nullptr;
 		}
 
 		isedf = 0;
 		if (strcmp(record, "~") == 0) {
-			if (in_msrec && vsd) {
-				char *p;
-
-				SALLOC(hsd, 1, sizeof(struct hsdata *));
-				SALLOC(hsd[0], 1, sizeof(struct hsdata));
-				SSTRCPY(hsd[0]->info.desc, "~");
+			if (in_msrec && vsd.size()) {
+				hsd=new hsdata*[1];
+				hsd[0]=new hsdata;
+				hsd[0]->info.desc= "~";
 				hsd[0]->info.spf = 1;
 				hsd[0]->info.fmt = 0;
 				hsd[0]->info.nsamp = nsamples = segp->nsamp;
@@ -707,27 +705,27 @@ public:
 
 		/* If the final component of the record name includes a '.', assume it is a
 		   file name. */
-		q = (char *)record + strlen(record) - 1;
+		char* q = const_cast<char *>(record) + strlen(record) - 1;
 		while (q > record && *q != '.' && *q != '/' && *q != ':' && *q != '\\')
 			q--;
 		if (*q == '.') {
-			if ((hheader = wfdb_open(NULL, record, WFDB_READ)) == NULL) {
-				wfdb_error("init: can't open %s\n", record);
+			if ((hheader = wfdb_open(nullptr, record, WFDB_READ)) == nullptr) {
+				_context->error("init: can't open %s\n", record);
 				return (-1);
 			}
-			else if (strcmp(q + 1, "hea"))	/* assume EDF if suffix is not '.hea' */
+			if (strcmp(q + 1, "hea"))	/* assume EDF if suffix is not '.hea' */
 				return (edfparse(hheader));
 		}
 
 		/* Otherwise, assume the file name is record.hea. */
-		else if ((hheader = wfdb_open("hea", record, WFDB_READ)) == NULL) {
-			wfdb_error("init: can't open header for record %s\n", record);
+		else if ((hheader = wfdb_open("hea", record, WFDB_READ)) == nullptr) {
+			_context->error("init: can't open header for record %s\n", record);
 			return (-1);
 		}
 
 		/* Read the first line and check for a magic string. */
-		if (wfdb_fgets(linebuf, 256, hheader) == NULL) {
-			wfdb_error("init: record %s header is empty\n", record);
+		if (wfdb_fgets(linebuf, 256, hheader) == nullptr) {
+			_context->error("init: record %s header is empty\n", record);
 			return (-2);
 		}
 		if (strncmp("#wfdb", linebuf, 5) == 0) { /* found the magic string */
@@ -737,7 +735,7 @@ public:
 			if ((i > 0 && major > WFDB_MAJOR) ||
 				(i > 1 && minor > WFDB_MINOR) ||
 				(i > 2 && release > WFDB_RELEASE)) {
-				wfdb_error("init: reading record %s requires WFDB library "
+				_context->error("init: reading record %s requires WFDB library "
 					"version %d.%d.%d or later\n"
 					"  (the most recent version is always available from http://physionet.org)\n",
 					record, major, minor, release);
@@ -749,7 +747,7 @@ public:
 		   non-comment line. */
 		while ((p = strtok(linebuf, sep)) == NULL || *p == '#') {
 			if (wfdb_fgets(linebuf, 256, hheader) == NULL) {
-				wfdb_error("init: can't find record name in record %s header\n",
+				_context->error("init: can't find record name in record %s header\n",
 					record);
 				return (-2);
 			}
@@ -759,7 +757,7 @@ public:
 			;
 		if (*q == '/') {
 			if (in_msrec) {
-				wfdb_error(
+				_context->error(
 					"init: record %s cannot be nested in another multi-segment record\n",
 					record);
 				return (-2);
@@ -786,7 +784,7 @@ public:
 					break;
 
 			if (q > s && (r > s || strcmp(p, s + 1) != 0)) {
-				wfdb_error("init: record name in record %s header is incorrect\n",
+				_context->error("init: record name in record %s header is incorrect\n",
 					record);
 				return (-2);
 			}
@@ -798,7 +796,7 @@ public:
 		   have two or more.) */
 		if ((p = strtok((char *)NULL, sep)) == NULL) {
 			/* The file appears to be an old-style header file. */
-			wfdb_error("init: obsolete format in record %s header\n", record);
+			_context->error("init: obsolete format in record %s header\n", record);
 			return (-2);
 		}
 
@@ -808,21 +806,21 @@ public:
 
 		/* Determine the frame rate, if present and not set already. */
 		if (p = strtok((char *)NULL, sep)) {
-			if ((f = (WFDB_Frequency)strtod(p, NULL)) <= (WFDB_Frequency)0.) {
-				wfdb_error(
+			if ((f = (FrequencyType)strtod(p, NULL)) <= (FrequencyType)0.) {
+				_context->error(
 					"init: sampling frequency in record %s header is incorrect\n",
 					record);
 				return (-2);
 			}
-			if (ffreq > (WFDB_Frequency)0. && f != ffreq) {
-				wfdb_error("warning (init):\n");
-				wfdb_error(" record %s sampling frequency differs", record);
-				wfdb_error(" from that of previously opened record\n");
+			if (ffreq > (FrequencyType)0. && f != ffreq) {
+				_context->error("warning (init):\n");
+				_context->error(" record %s sampling frequency differs", record);
+				_context->error(" from that of previously opened record\n");
 			}
 			else
 				ffreq = f;
 		}
-		else if (ffreq == (WFDB_Frequency)0.)
+		else if (ffreq == (FrequencyType)0.)
 			ffreq = WFDB_DEFFREQ;
 
 		/* Set the sampling rate to the frame rate for now.  This may be
@@ -848,25 +846,25 @@ public:
 		/* Determine the number of samples per signal, if present and not
 		   set already. */
 		if (p = strtok((char *)NULL, sep)) {
-			if ((ns = (WFDB_Time)strtol(p, NULL, 10)) < 0L) {
-				wfdb_error(
+			if ((ns = (TimeType)strtol(p, NULL, 10)) < 0L) {
+				_context->error(
 					"init: number of samples in record %s header is incorrect\n",
 					record);
 				return (-2);
 			}
-			if (nsamples == (WFDB_Time)0L)
+			if (nsamples == (TimeType)0L)
 				nsamples = ns;
-			else if (ns > (WFDB_Time)0L && ns != nsamples && !in_msrec) {
-				wfdb_error("warning (init):\n");
-				wfdb_error(" record %s duration differs", record);
-				wfdb_error(" from that of previously opened record\n");
+			else if (ns > (TimeType)0L && ns != nsamples && !in_msrec) {
+				_context->error("warning (init):\n");
+				_context->error(" record %s duration differs", record);
+				_context->error(" from that of previously opened record\n");
 				/* nsamples must match the shortest record duration. */
 				if (nsamples > ns)
 					nsamples = ns;
 			}
 		}
 		else
-			ns = (WFDB_Time)0L;
+			ns = (TimeType)0L;
 
 		/* Determine the base time and date, if present and not set already. */
 		if ((p = strtok((char *)NULL, "\n\r")) != NULL &&
@@ -881,11 +879,11 @@ public:
 			/* Read the names and lengths of the segment records. */
 			SALLOC(segarray, segments, sizeof(WFDB_Seginfo));
 			segp = segarray;
-			for (i = 0, ns = (WFDB_Time)0L; i < segments; i++, segp++) {
+			for (i = 0, ns = (TimeType)0L; i < segments; i++, segp++) {
 				/* Get next segment spec, skip empty lines and comments. */
 				do {
 					if (wfdb_fgets(linebuf, 256, hheader) == NULL) {
-						wfdb_error(
+						_context->error(
 							"init: unexpected EOF in header file for record %s\n",
 							record);
 						SFREE(segarray);
@@ -894,7 +892,7 @@ public:
 					}
 				} while ((p = strtok(linebuf, sep)) == NULL || *p == '#');
 				if (strlen(p) > WFDB_MAXRNL) {
-					wfdb_error(
+					_context->error(
 						"init: `%s' is too long for a segment name in record %s\n",
 						p, record);
 					SFREE(segarray);
@@ -903,8 +901,8 @@ public:
 				}
 				(void)strcpy(segp->recname, p);
 				if ((p = strtok((char *)NULL, sep)) == NULL ||
-					(segp->nsamp = (WFDB_Time)strtol(p, NULL, 10)) < 0L) {
-					wfdb_error(
+					(segp->nsamp = (TimeType)strtol(p, NULL, 10)) < 0L) {
+					_context->error(
 						"init: length must be specified for segment %s in record %s\n",
 						segp->recname, record);
 					SFREE(segarray);
@@ -919,9 +917,9 @@ public:
 			if (msnsamples == 0L)
 				msnsamples = ns;
 			else if (ns != msnsamples) {
-				wfdb_error("warning (init): in record %s, "
+				_context->error("warning (init): in record %s, "
 					"stated record length (%ld)\n", record, msnsamples);
-				wfdb_error(" does not match sum of segment lengths (%ld)\n", ns);
+				_context->error(" does not match sum of segment lengths (%ld)\n", ns);
 			}
 			return (0);
 		}
@@ -948,7 +946,7 @@ public:
 			   non-empty, non-comment line. */
 			do {
 				if (wfdb_fgets(linebuf, 256, hheader) == NULL) {
-					wfdb_error(
+					_context->error(
 						"init: unexpected EOF in header file for record %s\n",
 						record);
 					return (-2);
@@ -977,7 +975,7 @@ public:
 			/* Determine the signal format. */
 			if ((p = strtok((char *)NULL, sep)) == NULL ||
 				!isfmt(hs->info.fmt = strtol(p, NULL, 10))) {
-				wfdb_error("init: illegal format for signal %d, record %s\n",
+				_context->error("init: illegal format for signal %d, record %s\n",
 					s, record);
 				return (-2);
 			}
@@ -999,9 +997,9 @@ public:
 			/* Determine the gain in ADC units per physical unit.  This number
 			   may be zero or missing;  if so, the signal is uncalibrated. */
 			if (p = strtok((char *)NULL, sep))
-				hs->info.gain = (WFDB_Gain)strtod(p, NULL);
+				hs->info.gain = (GainType)strtod(p, NULL);
 			else
-				hs->info.gain = (WFDB_Gain)0.;
+				hs->info.gain = (GainType)0.;
 
 			/* Determine the baseline if specified, and the physical units
 			   (assumed to be millivolts unless otherwise specified). */
@@ -1057,7 +1055,7 @@ public:
 			}
 			else {
 				hs->info.cksum = 0;
-				hs->info.nsamp = (WFDB_Time)0L;
+				hs->info.nsamp = (TimeType)0L;
 			}
 
 			/* Determine the block size (assumed to be zero if missing). */
@@ -1068,7 +1066,7 @@ public:
 			if (s && (hp == NULL || (hs->info.group == hp->info.group &&
 				(hs->info.fmt != hp->info.fmt ||
 					hs->info.bsize != hp->info.bsize)))) {
-				wfdb_error("init: error in specification of signal %d or %d\n",
+				_context->error("init: error in specification of signal %d or %d\n",
 					s - 1, s);
 				return (-2);
 			}
@@ -1148,7 +1146,7 @@ public:
 	{
 		struct osdata *os;
 		struct ogdata *og;
-		WFDB_Group g;
+		GroupType g;
 
 		for (g = 0; g < nogroup; g++)
 			if (ogd && (og = ogd[g]))
@@ -1326,7 +1324,7 @@ r61() in order to obtain proper sign extension. */
 	}
 
 	/* w212: write the next sample to a format 212 signal file */
-	static void w212(WFDB_Sample v, struct ogdata *g)
+	static void w212(SampleType v, struct ogdata *g)
 	{
 		/* Samples are buffered here and written in pairs, as three bytes. */
 		switch (g->count++) {
@@ -1371,7 +1369,7 @@ r61() in order to obtain proper sign extension. */
 	}
 
 	/* w310: write the next sample to a format 310 signal file */
-	static void w310(WFDB_Sample v, struct ogdata *g)
+	static void w310(SampleType v, struct ogdata *g)
 	{
 		/* Samples are buffered here and written in groups of three, as two
 		   left-justified 15-bit words. */
@@ -1431,7 +1429,7 @@ r61() in order to obtain proper sign extension. */
 	}
 
 	/* w311: write the next sample to a format 311 signal file */
-	static void w311(WFDB_Sample v, struct ogdata *g)
+	static void w311(SampleType v, struct ogdata *g)
 	{
 		/* Samples are buffered here and written in groups of three, bit-packed
 		   into the 30 low bits of a 32-bit word. */
@@ -1468,12 +1466,12 @@ r61() in order to obtain proper sign extension. */
 		}
 	}
 
-	static int isgsetframe(WFDB_Group g, WFDB_Time t)
+	static int isgsetframe(GroupType g, TimeType t)
 	{
 		int i, trem = 0;
 		long nb, tt;
 		struct igdata *ig;
-		WFDB_Signal s;
+		SignalType s;
 		unsigned int b, d = 1, n, nn;
 
 		/* Do nothing if there is no more than one input signal group and
@@ -1486,7 +1484,7 @@ r61() in order to obtain proper sign extension. */
 		for (s = 0; s < nisig && g != isd[s]->info.group; s++)
 			;
 		if (s == nisig) {
-			wfdb_error("isgsettime: incorrect signal group number %d\n", g);
+			_context->error("isgsettime: incorrect signal group number %d\n", g);
 			return (-2);
 		}
 
@@ -1497,10 +1495,10 @@ r61() in order to obtain proper sign extension. */
 		   containing the desired sample. */
 		if (in_msrec) {
 			WFDB_Seginfo *tseg = segp;
-			WFDB_Group h;
+			GroupType h;
 
 			if (t >= msnsamples) {
-				wfdb_error("isigsettime: improper seek on signal group %d\n", g);
+				_context->error("isigsettime: improper seek on signal group %d\n", g);
 				return (-1);
 			}
 			while (t < tseg->samp0)
@@ -1510,7 +1508,7 @@ r61() in order to obtain proper sign extension. */
 			if (segp != tseg) {
 				segp = tseg;
 				if (isigopen(segp->recname, NULL, (int)nvsig) < 0) {
-					wfdb_error("isigsettime: can't open segment %s\n",
+					_context->error("isigsettime: can't open segment %s\n",
 						segp->recname);
 					return (-1);
 				}
@@ -1579,7 +1577,7 @@ r61() in order to obtain proper sign extension. */
 					(void)r212(ig);
 				istime++;
 				for (n = 0; s + n < nisig && isd[s + n]->info.group == g; n++)
-					isd[s + n]->info.nsamp = (WFDB_Time)0L;
+					isd[s + n]->info.nsamp = (TimeType)0L;
 				return (0);
 			}
 			b = 3 * nn; d = 2; break;
@@ -1597,7 +1595,7 @@ r61() in order to obtain proper sign extension. */
 					(void)r310(ig);
 				istime += trem;
 				for (n = 0; s + n < nisig && isd[s + n]->info.group == g; n++)
-					isd[s + n]->info.nsamp = (WFDB_Time)0L;
+					isd[s + n]->info.nsamp = (TimeType)0L;
 				return (0);
 			}
 			b = 4 * nn; d = 3; break;
@@ -1615,7 +1613,7 @@ r61() in order to obtain proper sign extension. */
 					(void)r311(ig);
 				istime += trem;
 				for (n = 0; s + n < nisig && isd[s + n]->info.group == g; n++)
-					isd[s + n]->info.nsamp = (WFDB_Time)0L;
+					isd[s + n]->info.nsamp = (TimeType)0L;
 				return (0);
 			}
 			b = 4 * nn; d = 3; break;
@@ -1633,7 +1631,7 @@ r61() in order to obtain proper sign extension. */
 			   desired sample. */
 			tt = nb / i;
 			if (wfdb_fseek(ig->fp, tt*i, 0)) {
-				wfdb_error("isigsettime: improper seek on signal group %d\n", g);
+				_context->error("isigsettime: improper seek on signal group %d\n", g);
 				return (-1);
 			}
 			nb %= i;
@@ -1650,7 +1648,7 @@ r61() in order to obtain proper sign extension. */
 			   read and has passed out of the buffer, requiring a rewind ... */
 			if (t < t0) {
 				if (wfdb_fseek(ig->fp, 0L, 0)) {
-					wfdb_error("isigsettime: improper seek on signal group %d\n",
+					_context->error("isigsettime: improper seek on signal group %d\n",
 						g);
 					return (-1);
 				}
@@ -1688,7 +1686,7 @@ r61() in order to obtain proper sign extension. */
 		   testing (by setting the number of samples remaining to 0). */
 		if (s == 0) istime = in_msrec ? t + segp->samp0 : t;
 		while (n-- != 0)
-			isd[s + n]->info.nsamp = (WFDB_Time)0L;
+			isd[s + n]->info.nsamp = (TimeType)0L;
 		return (0);
 	}
 
@@ -1696,14 +1694,14 @@ r61() in order to obtain proper sign extension. */
 	   invalid sample */
 #define VFILL	((gvmode & WFDB_GVPAD) ? is->samp : WFDB_INVALID_SAMPLE)
 
-	static int getskewedframe(WFDB_Sample *vector)
+	static int getskewedframe(SampleType *vector)
 	{
 		int c, stat;
 		struct isdata *is;
 		struct igdata *ig;
-		WFDB_Group g;
-		WFDB_Sample v;
-		WFDB_Signal s;
+		GroupType g;
+		SampleType v;
+		SignalType s;
 
 		if ((stat = (int)nisig) == 0) return (0);
 		if (istime == 0L) {
@@ -1796,14 +1794,14 @@ r61() in order to obtain proper sign extension. */
 				if (ig->stat <= 0) {
 					/* End of file -- reset input counter. */
 					ig->count = 0;
-					if (is->info.nsamp > (WFDB_Time)0L) {
-						wfdb_error("getvec: unexpected EOF in signal %d\n", s);
+					if (is->info.nsamp > (TimeType)0L) {
+						_context->error("getvec: unexpected EOF in signal %d\n", s);
 						stat = -3;
 					}
 					else if (in_msrec && segp && segp < segend) {
 						segp++;
 						if (isigopen(segp->recname, NULL, (int)nvsig) < 0) {
-							wfdb_error("getvec: error opening segment %s\n",
+							_context->error("getvec: error opening segment %s\n",
 								segp->recname);
 							stat = -3;
 							return (stat);  /* avoid looping if segment is bad */
@@ -1815,8 +1813,8 @@ r61() in order to obtain proper sign extension. */
 					}
 					else
 						stat = -1;
-					if (is->info.nsamp > (WFDB_Time)0L) {
-						wfdb_error("getvec: unexpected EOF in signal %d\n", s);
+					if (is->info.nsamp > (TimeType)0L) {
+						_context->error("getvec: unexpected EOF in signal %d\n", s);
 						stat = -3;
 					}
 					else
@@ -1824,21 +1822,21 @@ r61() in order to obtain proper sign extension. */
 				}
 				is->info.cksum -= v;
 			}
-			if (--is->info.nsamp == (WFDB_Time)0L &&
+			if (--is->info.nsamp == (TimeType)0L &&
 				(is->info.cksum & 0xffff) &&
 				!in_msrec && !isedf &&
 				is->info.fmt != 0) {
-				wfdb_error("getvec: checksum error in signal %d\n", s);
+				_context->error("getvec: checksum error in signal %d\n", s);
 				stat = -4;
 			}
 		}
 		return (stat);
 	}
 
-	static int rgetvec(WFDB_Sample *vector)
+	static int rgetvec(SampleType *vector)
 	{
-		WFDB_Sample *tp;
-		WFDB_Signal s;
+		SampleType *tp;
+		SignalType s;
 		static int stat;
 
 		if (ispfmax < 2)	/* all signals at the same frequency */
@@ -1887,8 +1885,8 @@ r61() in order to obtain proper sign extension. */
 		int navail;
 		int ngroups;
 		struct isdata *is;
-		WFDB_Signal s, si, sj;
-		WFDB_Group g;
+		SignalType s, si, sj;
+		GroupType g;
 
 		/* Close previously opened input signals unless otherwise requested. */
 		if (*record == '+') record++;
@@ -1907,11 +1905,11 @@ r61() in order to obtain proper sign extension. */
 				/* Open the first segment to get signal information. */
 				if (segp && (navail = readheader(segp->recname)) >= 0) {
 					if (msbtime == 0L) msbtime = btime;
-					if (msbdate == (WFDB_Date)0) msbdate = bdate;
+					if (msbdate == (DateType)0) msbdate = bdate;
 				}
 			}
 			if (navail == 0 && nsig)
-				wfdb_error("isigopen: record %s has no signals\n", record);
+				_context->error("isigopen: record %s has no signals\n", record);
 			if (navail <= 0)
 				return (navail);
 		}
@@ -2005,7 +2003,7 @@ r61() in order to obtain proper sign extension. */
 		/* Produce a warning message if none of the requested signals could be
 		   opened. */
 		if (s == 0 && nsig)
-			wfdb_error("isigopen: none of the signals for record %s is readable\n",
+			_context->error("isigopen: none of the signals for record %s is readable\n",
 				record);
 
 		/* Copy the WFDB_Siginfo structures to the caller's array.  Use these
@@ -2060,7 +2058,7 @@ r61() in order to obtain proper sign extension. */
 		int n;
 		struct osdata *os, *op;
 		struct ogdata *og;
-		WFDB_Signal s;
+		SignalType s;
 		unsigned int ga;
 
 		/* Close previously opened output signals unless otherwise requested. */
@@ -2073,7 +2071,7 @@ r61() in order to obtain proper sign extension. */
 		if ((n = readheader(record)) < 0)
 			return (n);
 		if (n < nsig) {
-			wfdb_error("osigopen: record %s has fewer signals than needed\n",
+			_context->error("osigopen: record %s has fewer signals than needed\n",
 				record);
 			return (-3);
 		}
@@ -2101,7 +2099,7 @@ r61() in order to obtain proper sign extension. */
 			copysi(siarray, &hsd[s]->info);
 			if (os->info.spf < 1) os->info.spf = siarray->spf = 1;
 			os->info.cksum = siarray->cksum = 0;
-			os->info.nsamp = siarray->nsamp = (WFDB_Time)0L;
+			os->info.nsamp = siarray->nsamp = (TimeType)0L;
 			os->info.group += ga; siarray->group += ga;
 
 			if (s == 0 || os->info.group != op->info.group) {
@@ -2128,7 +2126,7 @@ r61() in order to obtain proper sign extension. */
 					/* An error in opening an output file is fatal. */
 					og->fp = wfdb_open(os->info.fname, (char *)NULL, WFDB_WRITE);
 					if (og->fp == NULL) {
-						wfdb_error("osigopen: can't open %s\n", os->info.fname);
+						_context->error("osigopen: can't open %s\n", os->info.fname);
 						SFREE(og->buf);
 						osigclose();
 						return (-3);
@@ -2140,7 +2138,7 @@ r61() in order to obtain proper sign extension. */
 				/* This signal belongs to the same group as the previous signal. */
 				if (os->info.fmt != op->info.fmt ||
 					os->info.bsize != op->info.bsize) {
-					wfdb_error(
+					_context->error(
 						"osigopen: error in specification of signal %d or %d\n",
 						s - 1, s);
 					return (-2);
@@ -2175,7 +2173,7 @@ r61() in order to obtain proper sign extension. */
 			   at zero and increase in steps of 1. */
 			if (strlen(si->fname) + strlen(si->desc) > 200 ||
 				si->bsize < 0 || !isfmt(si->fmt)) {
-				wfdb_error("osigfopen: error in specification of signal %d\n",
+				_context->error("osigfopen: error in specification of signal %d\n",
 					s);
 				return (-2);
 			}
@@ -2184,7 +2182,7 @@ r61() in order to obtain proper sign extension. */
 					strcmp(si->fname, (si - 1)->fname) == 0) ||
 					(s && si->group == (si - 1)->group + 1 &&
 						strcmp(si->fname, (si - 1)->fname) != 0))) {
-				wfdb_error(
+				_context->error(
 					"osigfopen: incorrect file name or group for signal %d\n",
 					s);
 				return (-2);
@@ -2208,7 +2206,7 @@ r61() in order to obtain proper sign extension. */
 			   group numbers should begin at zero and increase in steps of 1. */
 			if (strlen(siarray->fname) + strlen(siarray->desc) > 200 ||
 				siarray->bsize < 0 || !isfmt(siarray->fmt)) {
-				wfdb_error("osigfopen: error in specification of signal %d\n",
+				_context->error("osigfopen: error in specification of signal %d\n",
 					nosig);
 				return (-2);
 			}
@@ -2217,7 +2215,7 @@ r61() in order to obtain proper sign extension. */
 					strcmp(siarray->fname, (siarray - 1)->fname) == 0) ||
 					(nosig && siarray->group == (siarray - 1)->group + 1 &&
 						strcmp(siarray->fname, (siarray - 1)->fname) != 0))) {
-				wfdb_error(
+				_context->error(
 					"osigfopen: incorrect file name or group for signal %d\n",
 					nosig);
 				return (-2);
@@ -2227,7 +2225,7 @@ r61() in order to obtain proper sign extension. */
 			copysi(&os->info, siarray);
 			if (os->info.spf < 1) os->info.spf = 1;
 			os->info.cksum = 0;
-			os->info.nsamp = (WFDB_Time)0L;
+			os->info.nsamp = (TimeType)0L;
 
 			/* Check if this signal is in the same group as the previous one. */
 			if (nosig == 0 || os->info.group != op->info.group) {
@@ -2254,7 +2252,7 @@ r61() in order to obtain proper sign extension. */
 					/* An error in opening an output file is fatal. */
 					og->fp = wfdb_open(os->info.fname, (char *)NULL, WFDB_WRITE);
 					if (og->fp == NULL) {
-						wfdb_error("osigfopen: can't open %s\n", os->info.fname);
+						_context->error("osigfopen: can't open %s\n", os->info.fname);
 						SFREE(og->buf);
 						osigclose();
 						return (-3);
@@ -2266,7 +2264,7 @@ r61() in order to obtain proper sign extension. */
 				/* This signal belongs to the same group as the previous signal. */
 				if (os->info.fmt != op->info.fmt ||
 					os->info.bsize != op->info.bsize) {
-					wfdb_error(
+					_context->error(
 						"osigfopen: error in specification of signal %d or %d\n",
 						nosig - 1, nosig);
 					return (-2);
@@ -2366,16 +2364,16 @@ r61() in order to obtain proper sign extension. */
 
 	static long mticks, nticks, mnticks;
 	static int rgvstat;
-	static WFDB_Time rgvtime, gvtime;
-	static WFDB_Sample *gv0, *gv1;
+	static TimeType rgvtime, gvtime;
+	static SampleType *gv0, *gv1;
 
-	FINT setifreq(WFDB_Frequency f)
+	FINT setifreq(FrequencyType f)
 	{
-		WFDB_Frequency error, g = sfreq;
+		FrequencyType error, g = sfreq;
 
 		if (g <= 0.0) {
 			ifreq = 0.0;
-			wfdb_error("setifreq: no open input record\n");
+			_context->error("setifreq: no open input record\n");
 			return (-1);
 		}
 		if (f > 0.0) {
@@ -2411,17 +2409,17 @@ r61() in order to obtain proper sign extension. */
 		}
 		else {
 			ifreq = 0.0;
-			wfdb_error("setifreq: improper frequency %g (must be > 0)\n", f);
+			_context->error("setifreq: improper frequency %g (must be > 0)\n", f);
 			return (-1);
 		}
 	}
 
 	FFREQUENCY getifreq(void)
 	{
-		return (ifreq > (WFDB_Frequency)0 ? ifreq : sfreq);
+		return (ifreq > (FrequencyType)0 ? ifreq : sfreq);
 	}
 
-	FINT getvec(WFDB_Sample *vector)
+	FINT getvec(SampleType *vector)
 	{
 		int i, nsig;
 
@@ -2448,7 +2446,7 @@ r61() in order to obtain proper sign extension. */
 		return (rgvstat);
 	}
 
-	FINT getframe(WFDB_Sample *vector)
+	FINT getframe(SampleType *vector)
 	{
 		int stat;
 
@@ -2481,19 +2479,19 @@ r61() in order to obtain proper sign extension. */
 		return (stat);
 	}
 
-	FINT putvec(WFDB_Sample *vector)
+	FINT putvec(SampleType *vector)
 	{
 		int c, dif, stat = (int)nosig;
 		struct osdata *os;
 		struct ogdata *og;
-		WFDB_Signal s;
-		WFDB_Group g;
+		SignalType s;
+		GroupType g;
 
 		for (s = 0; s < nosig; s++) {
 			os = osd[s];
 			g = os->info.group;
 			og = ogd[os->info.group];
-			if (os->info.nsamp++ == (WFDB_Time)0L)
+			if (os->info.nsamp++ == (TimeType)0L)
 				os->info.initval = os->samp = *vector;
 			for (c = 0; c < os->info.spf; c++, vector++) {
 				/* Replace invalid samples with lowest possible value for format */
@@ -2549,7 +2547,7 @@ r61() in order to obtain proper sign extension. */
 					w32(*vector, og); os->samp = *vector; break;
 				}
 				if (wfdb_ferror(og->fp)) {
-					wfdb_error("putvec: write error in signal %d\n", s);
+					_context->error("putvec: write error in signal %d\n", s);
 					stat = -1;
 				}
 				else
@@ -2560,15 +2558,15 @@ r61() in order to obtain proper sign extension. */
 		return (stat);
 	}
 
-	FINT isigsettime(WFDB_Time t)
+	FINT isigsettime(TimeType t)
 	{
-		WFDB_Group g;
-		WFDB_Time curtime;
+		GroupType g;
+		TimeType curtime;
 		int stat = 0;
 
 		/* Return immediately if no seek is needed. */
 		if (nisig == 0) return (0);
-		if (ifreq <= (WFDB_Frequency)0) {
+		if (ifreq <= (FrequencyType)0) {
 			if (sfreq == ffreq)
 				curtime = istime;
 			else
@@ -2584,7 +2582,7 @@ r61() in order to obtain proper sign extension. */
 		return (stat);
 	}
 
-	FINT isgsettime(WFDB_Group g, WFDB_Time t)
+	FINT isgsettime(GroupType g, TimeType t)
 	{
 		int spf, stat, trem = 0;
 
@@ -2592,8 +2590,8 @@ r61() in order to obtain proper sign extension. */
 		if (t < 0L) t = -t;
 
 		/* Convert t to raw sample intervals if we are resampling. */
-		if (ifreq > (WFDB_Frequency)0)
-			t = (WFDB_Time)(t * sfreq / ifreq);
+		if (ifreq > (FrequencyType)0)
+			t = (TimeType)(t * sfreq / ifreq);
 
 		/* If we're in WFDB_HIGHRES mode, convert t from samples to frames, and
 		   save the remainder (if any) in trem. */
@@ -2606,12 +2604,12 @@ r61() in order to obtain proper sign extension. */
 		if ((stat = isgsetframe(g, t)) == 0 && g == 0) {
 			while (trem-- > 0) {
 				if (rgetvec(uvector) < 0) {
-					wfdb_error("isigsettime: improper seek on signal group %d\n",
+					_context->error("isigsettime: improper seek on signal group %d\n",
 						g);
 					return (-1);
 				}
 			}
-			if (ifreq > (WFDB_Frequency)0 && ifreq != sfreq) {
+			if (ifreq > (FrequencyType)0 && ifreq != sfreq) {
 				gvtime = 0;
 				rgvstat = rgetvec(gv0);
 				rgvstat = rgetvec(gv1);
@@ -2622,18 +2620,18 @@ r61() in order to obtain proper sign extension. */
 		return (stat);
 	}
 
-	FSITIME tnextvec(WFDB_Signal s, WFDB_Time t)
+	FSITIME tnextvec(SignalType s, TimeType t)
 	{
 		int stat = 0;
-		WFDB_Time tf;
+		TimeType tf;
 
 		if (in_msrec && need_sigmap) { /* variable-layout multi-segment record */
 			if (s >= nvsig) {
-				wfdb_error("nextvect: illegal signal number %d\n", s);
-				return ((WFDB_Time)-1);
+				_context->error("nextvect: illegal signal number %d\n", s);
+				return ((TimeType)-1);
 			}
 			/* Go to the start (t) if not already there. */
-			if (t != istime && isigsettime(t) < 0) return ((WFDB_Time)-1);
+			if (t != istime && isigsettime(t) < 0) return ((TimeType)-1);
 			while (stat >= 0) {
 				char *p = vsd[s]->info.desc, *q;
 				int ss;
@@ -2652,7 +2650,7 @@ r61() in order to obtain proper sign extension. */
 							isigsettime(t);
 							return (t);
 						}
-					if (stat < 0) return ((WFDB_Time)-1);
+					if (stat < 0) return ((TimeType)-1);
 				}
 				/* Go on to the next segment. */
 				if (t != tf) stat = isigsettime(t = tf);
@@ -2660,10 +2658,10 @@ r61() in order to obtain proper sign extension. */
 		}
 		else {	/* single-segment or fixed-layout multi-segment record */
 		/* Go to the start (t) if not already there. */
-			if (t != istime && isigsettime(t) < 0) return ((WFDB_Time)-1);
+			if (t != istime && isigsettime(t) < 0) return ((TimeType)-1);
 			if (s >= nisig) {
-				wfdb_error("nextvect: illegal signal number %d\n", s);
-				return ((WFDB_Time)-1);
+				_context->error("nextvect: illegal signal number %d\n", s);
+				return ((TimeType)-1);
 			}
 			for (; (stat = getvec(vvector)) > 0; t++)
 				/* Read samples until we find a valid one or reach the end of the
@@ -2674,63 +2672,64 @@ r61() in order to obtain proper sign extension. */
 				}
 		}
 		/* Error or end of record without finding another sample of signal s. */
-		return ((WFDB_Time)stat);
+		return ((TimeType)stat);
 	}
 
-	FINT setibsize(int n)
+	int inputBufferSize(int n)
 	{
 		if (nisig) {
-			wfdb_error("setibsize: can't change buffer size after isigopen\n");
+			_context->error("setibsize: can't change buffer size after isigopen\n");
 			return (-1);
 		}
 		if (n < 0) {
-			wfdb_error("setibsize: illegal buffer size %d\n", n);
+			_context->error("setibsize: illegal buffer size %d\n", n);
 			return (-2);
 		}
 		if (n == 0) n = BUFSIZ;
 		return (ibsize = n);
 	}
+	int inputBufferSize() const
+	{
+		return ibsize;
+	}
 
-	FINT setobsize(int n)
+	int outputBufferSize(int n)
 	{
 		if (nosig) {
-			wfdb_error("setobsize: can't change buffer size after osig[f]open\n");
+			_context->error("setobsize: can't change buffer size after osig[f]open\n");
 			return (-1);
 		}
 		if (n < 0) {
-			wfdb_error("setobsize: illegal buffer size %d\n", n);
+			_context->error("setobsize: illegal buffer size %d\n", n);
 			return (-2);
 		}
 		if (n == 0) n = BUFSIZ;
 		return (obsize = n);
 	}
+	int outputBufferSize()const
+	{
+		return obsize;
+	}
 
-	FINT newheader(char *record)
+	int newheader(char *record)
 	{
 		int stat;
-		WFDB_Signal s;
-		WFDB_Siginfo *osi;
+		SignalType s;
 
 		/* Remove trailing .hea, if any, from record name. */
 		wfdb_striphea(record);
-
-		SUALLOC(osi, nosig, sizeof(WFDB_Siginfo));
+		WFDB_Siginfo* osi = new WFDB_Siginfo[nosig];
 		for (s = 0; s < nosig; s++)
 			copysi(&osi[s], &osd[s]->info);
 		stat = setheader(record, osi, nosig);
-		for (s = 0; s < nosig; s++) {
-			SFREE(osi[s].fname);
-			SFREE(osi[s].desc);
-			SFREE(osi[s].units);
-		}
-		SFREE(osi);
+		delete[] osi;
 		return (stat);
 	}
 
-	FINT setheader(char *record, WFDB_Siginfo *siarray, unsigned int nsig)
+	int setheader(char *record, WFDB_Siginfo *siarray, unsigned int nsig)
 	{
 		char *p;
-		WFDB_Signal s;
+		SignalType s;
 
 		/* If another output header file was opened, close it. */
 		if (oheader) {
@@ -2748,7 +2747,7 @@ r61() in order to obtain proper sign extension. */
 
 		/* Try to create the header file. */
 		if ((oheader = wfdb_open("hea", record, WFDB_WRITE)) == NULL) {
-			wfdb_error("newheader: can't create header for record %s\n", record);
+			_context->error("newheader: can't create header for record %s\n", record);
 			return (-1);
 		}
 
@@ -2760,7 +2759,7 @@ r61() in order to obtain proper sign extension. */
 				(void)wfdb_fprintf(oheader, "(%.12g)", bcount);
 		}
 		(void)wfdb_fprintf(oheader, " %ld", nsig > 0 ? siarray[0].nsamp : 0L);
-		if (btime != 0L || bdate != (WFDB_Date)0) {
+		if (btime != 0L || bdate != (DateType)0) {
 			if (btime == 0L)
 				(void)wfdb_fprintf(oheader, " 0:00");
 			else if (btime % 1000 == 0)
@@ -2811,7 +2810,7 @@ r61() in order to obtain proper sign extension. */
 
 	FINT setmsheader(char *record, char **segment_name, unsigned int nsegments)
 	{
-		WFDB_Frequency msfreq, mscfreq;
+		FrequencyType msfreq, mscfreq;
 		double msbcount;
 		int n, nsig, old_in_msrec = in_msrec;
 		long *ns;
@@ -2834,14 +2833,14 @@ r61() in order to obtain proper sign extension. */
 			return (-1);
 
 		if (nsegments < 1) {
-			wfdb_error("setmsheader: record must contain at least one segment\n");
+			_context->error("setmsheader: record must contain at least one segment\n");
 			return (-1);
 		}
 
 		SUALLOC(ns, nsegments, (sizeof(long)*nsegments));
 		for (i = 0; i < nsegments; i++) {
 			if (strlen(segment_name[i]) > WFDB_MAXRNL) {
-				wfdb_error(
+				_context->error(
 					"setmsheader: `%s' is too long for a segment name in record %s\n",
 					segment_name[i], record);
 				SFREE(ns);
@@ -2851,13 +2850,13 @@ r61() in order to obtain proper sign extension. */
 			n = readheader(segment_name[i]);
 			in_msrec = old_in_msrec;
 			if (n < 0) {
-				wfdb_error("setmsheader: can't read segment %s header\n",
+				_context->error("setmsheader: can't read segment %s header\n",
 					segment_name[i]);
 				SFREE(ns);
 				return (-3);
 			}
 			if ((ns[i] = hsd[0]->info.nsamp) <= 0L) {
-				wfdb_error("setmsheader: length of segment %s must be specified\n",
+				_context->error("setmsheader: length of segment %s must be specified\n",
 					segment_name[i]);
 				SFREE(ns);
 				return (-4);
@@ -2873,14 +2872,14 @@ r61() in order to obtain proper sign extension. */
 			}
 			else {
 				if (nsig != n) {
-					wfdb_error(
+					_context->error(
 						"setmsheader: incorrect number of signals in segment %s\n",
 						segment_name[i]);
 					SFREE(ns);
 					return (-4);
 				}
 				if (msfreq != ffreq) {
-					wfdb_error(
+					_context->error(
 						"setmsheader: incorrect sampling frequency in segment %s\n",
 						segment_name[i]);
 					SFREE(ns);
@@ -2892,7 +2891,7 @@ r61() in order to obtain proper sign extension. */
 
 		/* Try to create the header file. */
 		if ((oheader = wfdb_open("hea", record, WFDB_WRITE)) == NULL) {
-			wfdb_error("setmsheader: can't create header file for record %s\n",
+			_context->error("setmsheader: can't create header file for record %s\n",
 				record);
 			SFREE(ns);
 			return (-1);
@@ -2906,7 +2905,7 @@ r61() in order to obtain proper sign extension. */
 				(void)wfdb_fprintf(oheader, "(%.12g)", msbcount);
 		}
 		(void)wfdb_fprintf(oheader, " %ld", msnsamples);
-		if (msbtime != 0L || msbdate != (WFDB_Date)0) {
+		if (msbtime != 0L || msbdate != (DateType)0) {
 			if (msbtime % 1000 == 0)
 				(void)wfdb_fprintf(oheader, " %s",
 					ftimstr(msbtime, 1000.0));
@@ -2926,7 +2925,7 @@ r61() in order to obtain proper sign extension. */
 		return (0);
 	}
 
-	FINT wfdbgetskew(WFDB_Signal s)
+	FINT wfdbgetskew(SignalType s)
 	{
 		if (s < nisig)
 			return (vsd[s]->skew);
@@ -2936,7 +2935,7 @@ r61() in order to obtain proper sign extension. */
 
 	/* Careful!!  This function is dangerous, and should be used only to restore
 	   skews when they have been reset as a side effect of using, e.g., sampfreq */
-	FVOID wfdbsetiskew(WFDB_Signal s, int skew)
+	FVOID wfdbsetiskew(SignalType s, int skew)
 	{
 		if (s < nisig)
 			vsd[s]->skew = skew;
@@ -2945,13 +2944,13 @@ r61() in order to obtain proper sign extension. */
 	/* Note: wfdbsetskew affects *only* the skew to be written by setheader.
 	   It does not affect how getframe deskews input signals, nor does it
 	   affect the value returned by wfdbgetskew. */
-	FVOID wfdbsetskew(WFDB_Signal s, int skew)
+	FVOID wfdbsetskew(SignalType s, int skew)
 	{
 		if (s < nosig)
 			osd[s]->skew = skew;
 	}
 
-	FLONGINT wfdbgetstart(WFDB_Signal s)
+	FLONGINT wfdbgetstart(SignalType s)
 	{
 		if (s < nisig)
 			return (igd[vsd[s]->info.group]->start);
@@ -2964,22 +2963,22 @@ r61() in order to obtain proper sign extension. */
 	/* Note: wfdbsetstart affects *only* the byte offset to be written by
 	   setheader.  It does not affect how isgsettime calculates byte offsets, nor
 	   does it affect the value returned by wfdbgetstart. */
-	FVOID wfdbsetstart(WFDB_Signal s, long int bytes)
+	FVOID wfdbsetstart(SignalType s, long int bytes)
 	{
 		if (s < nosig)
 			ogd[osd[s]->info.group]->start = bytes;
 		prolog_bytes = bytes;
 	}
 
-	FINT wfdbputprolog(char *buf, long int size, WFDB_Signal s)
+	FINT wfdbputprolog(char *buf, long int size, SignalType s)
 	{
 		long int n;
-		WFDB_Group g = osd[s]->info.group;
+		GroupType g = osd[s]->info.group;
 
 		n = wfdb_fwrite(buf, 1, size, ogd[g]->fp);
 		wfdbsetstart(s, n);
 		if (n != size)
-			wfdb_error("wfdbputprolog: only %ld of %ld bytes written\n", n, size);
+			_context->error("wfdbputprolog: only %ld of %ld bytes written\n", n, size);
 		return (n == size ? 0 : -1);
 	}
 
@@ -3001,7 +3000,7 @@ r61() in order to obtain proper sign extension. */
 
 		/* Try to create the .info file. */
 		if ((outinfo = wfdb_open("info", record, WFDB_APPEND)) == NULL) {
-			wfdb_error("setinfo: can't create info file for record %s\n", record);
+			_context->error("setinfo: can't create info file for record %s\n", record);
 			return (-1);
 		}
 
@@ -3015,7 +3014,7 @@ r61() in order to obtain proper sign extension. */
 		if (outinfo == NULL) {
 			if (oheader) outinfo = oheader;
 			else {
-				wfdb_error("putinfo: caller has not specified a record name\n");
+				_context->error("putinfo: caller has not specified a record name\n");
 				return (-1);
 			}
 		}
@@ -3040,7 +3039,7 @@ r61() in order to obtain proper sign extension. */
 
 		if (pinfo == NULL) {	/* info for record has not yet been read */
 			if (record == NULL && (record = wfdb_getirec()) == NULL) {
-				wfdb_error("getinfo: caller did not specify record name\n");
+				_context->error("getinfo: caller did not specify record name\n");
 				return (NULL);
 			}
 
@@ -3124,19 +3123,19 @@ r61() in order to obtain proper sign extension. */
 			/* readheader sets sfreq if successful. */
 			if ((n = readheader(record)) < 0)
 				/* error message will come from readheader */
-				return ((WFDB_Frequency)n);
+				return ((FrequencyType)n);
 		}
 		return (sfreq);
 	}
 
-	FINT setsampfreq(WFDB_Frequency freq)
+	FINT setsampfreq(FrequencyType freq)
 	{
 		if (freq >= 0.) {
 			sfreq = ffreq = freq;
 			if ((gvmode & WFDB_HIGHRES) == WFDB_HIGHRES) sfreq *= ispfmax;
 			return (0);
 		}
-		wfdb_error("setsampfreq: sampling frequency must not be negative\n");
+		_context->error("setsampfreq: sampling frequency must not be negative\n");
 		return (-1);
 	}
 
@@ -3173,10 +3172,10 @@ r61() in order to obtain proper sign extension. */
 		if (p = strchr(string, ' '))
 			*p++ = '\0';	/* split time and date components */
 		btime = fstrtim(string, 1000.0);
-		bdate = p ? strdat(p) : (WFDB_Date)0;
-		if (btime == 0L && bdate == (WFDB_Date)0 && *string != '[') {
+		bdate = p ? strdat(p) : (DateType)0;
+		if (btime == 0L && bdate == (DateType)0 && *string != '[') {
 			if (p) *(--p) = ' ';
-			wfdb_error("setbasetime: incorrect time format, '%s'\n", string);
+			_context->error("setbasetime: incorrect time format, '%s'\n", string);
 			return (-1);
 		}
 		return (0);
@@ -3184,19 +3183,19 @@ r61() in order to obtain proper sign extension. */
 
 	/* Convert sample number to string, using the given sampling
 	   frequency */
-	static char *ftimstr(WFDB_Time t, WFDB_Frequency f)
+	static char *ftimstr(TimeType t, FrequencyType f)
 	{
 		char *p;
 
 		p = strtok(fmstimstr(t, f), ".");		 /* discard msec field */
-		if (t <= 0L && (btime != 0L || bdate != (WFDB_Date)0)) { /* time of day */
+		if (t <= 0L && (btime != 0L || bdate != (DateType)0)) { /* time of day */
 			(void)strcat(p, date_string);		  /* append dd/mm/yyyy */
 			(void)strcat(p, "]");
 		}
 		return (p);
 	}
 
-	FSTRING timstr(WFDB_Time t)
+	FSTRING timstr(TimeType t)
 	{
 		double f;
 
@@ -3207,18 +3206,18 @@ r61() in order to obtain proper sign extension. */
 		return ftimstr(t, f);
 	}
 
-	static WFDB_Date pdays = -1;
+	static DateType pdays = -1;
 
 	/* Convert sample number to string, using the given sampling
 	   frequency */
-	static char *fmstimstr(WFDB_Time t, WFDB_Frequency f)
+	static char *fmstimstr(TimeType t, FrequencyType f)
 	{
 		int hours, minutes, seconds, msec;
-		WFDB_Date days;
+		DateType days;
 		double tms;
 		long s;
 
-		if (t > 0L || (btime == 0L && bdate == (WFDB_Date)0)) { /* time interval */
+		if (t > 0L || (btime == 0L && bdate == (DateType)0)) { /* time interval */
 			if (t < 0L) t = -t;
 			/* Convert from sample intervals to seconds. */
 			s = (long)(t / f);
@@ -3264,7 +3263,7 @@ r61() in order to obtain proper sign extension. */
 		return (time_string);
 	}
 
-	FSTRING mstimstr(WFDB_Time t)
+	FSTRING mstimstr(TimeType t)
 	{
 		double f;
 
@@ -3280,7 +3279,7 @@ r61() in order to obtain proper sign extension. */
 		return (cfreq > 0. ? cfreq : ffreq);
 	}
 
-	FVOID setcfreq(WFDB_Frequency freq)
+	FVOID setcfreq(FrequencyType freq)
 	{
 		cfreq = freq;
 	}
@@ -3297,39 +3296,39 @@ r61() in order to obtain proper sign extension. */
 
 	/* Convert string to sample number, using the given sampling
 	   frequency */
-	static WFDB_Time fstrtim(char *string, WFDB_Frequency f)
+	static TimeType fstrtim(char *string, FrequencyType f)
 	{
 		char *p, *q, *r;
 		double x, y, z;
-		WFDB_Date days;
-		WFDB_Time t;
+		DateType days;
+		TimeType t;
 
 		while (*string == ' ' || *string == '\t' || *string == '\n' || *string == '\r')
 			string++;
 		switch (*string) {
 		case 'c': return (cfreq > 0. ?
-			(WFDB_Time)((strtod(string + 1, NULL) - bcount)*f / cfreq) :
-			(WFDB_Time)(strtol(string + 1, NULL, 10)));
+			(TimeType)((strtod(string + 1, NULL) - bcount)*f / cfreq) :
+			(TimeType)(strtol(string + 1, NULL, 10)));
 		case 'e':	return ((in_msrec ? msnsamples : nsamples) *
 			(((gvmode&WFDB_HIGHRES) == WFDB_HIGHRES) ? ispfmax : 1));
-		case 'f': return (WFDB_Time)(strtol(string + 1, NULL, 10)*f / ffreq);
-		case 'i':	return (WFDB_Time)(istime *
+		case 'f': return (TimeType)(strtol(string + 1, NULL, 10)*f / ffreq);
+		case 'i':	return (TimeType)(istime *
 			(ifreq > 0.0 ? (ifreq / sfreq) : 1.0) *
 			(((gvmode&WFDB_HIGHRES) == WFDB_HIGHRES) ? ispfmax : 1));
 		case 'o':	return (ostime);
-		case 's':	return ((WFDB_Time)strtol(string + 1, NULL, 10));
+		case 's':	return ((TimeType)strtol(string + 1, NULL, 10));
 		case '[':	  /* time of day, possibly with date or days since start */
 			if ((q = strchr(++string, ']')) == NULL)
-				return ((WFDB_Time)0);	/* '[...': malformed time string */
+				return ((TimeType)0);	/* '[...': malformed time string */
 			if ((p = strchr(string, ' ')) == NULL || p > q)
-				days = (WFDB_Date)0;/* '[hh:mm:ss.sss]': time since midnight only */
+				days = (DateType)0;/* '[hh:mm:ss.sss]': time since midnight only */
 			else if ((r = strchr(p + 1, '/')) == NULL || r > q)
-				days = (WFDB_Date)strtol(p + 1, NULL, 10); /* '[hh:mm:ss.sss d]' */
+				days = (DateType)strtol(p + 1, NULL, 10); /* '[hh:mm:ss.sss d]' */
 			else
 				days = strdat(p + 1) - bdate; /* '[hh:mm:ss.sss dd/mm/yyyy]' */
 			x = fstrtim(string, 1000.0) - btime;
 			if (days > 0L) x += (days*(24 * 60 * 60 * 1000.0));
-			t = (WFDB_Time)(x * f / 1000.0 + 0.5);
+			t = (TimeType)(x * f / 1000.0 + 0.5);
 			return (-t);
 		default:
 			x = strtod(string, NULL);
@@ -3337,7 +3336,7 @@ r61() in order to obtain proper sign extension. */
 			y = strtod(++p, NULL);
 			if ((p = strchr(p, ':')) == NULL) return ((long)((60.*x + y)*f + 0.5));
 			z = strtod(++p, NULL);
-			return ((WFDB_Time)((3600.*x + 60.*y + z)*f + 0.5));
+			return ((TimeType)((3600.*x + 60.*y + z)*f + 0.5));
 		}
 	}
 
@@ -3359,10 +3358,10 @@ r61() in order to obtain proper sign extension. */
 	   based on similar functions in chapter 1 of "Numerical Recipes", by Press,
 	   Flannery, Teukolsky, and Vetterling (Cambridge U. Press, 1986). */
 
-	FSTRING datstr(WFDB_Date date)
+	FSTRING datstr(DateType date)
 	{
 		int d, m, y, gcorr, jm, jy;
-		WFDB_Date jd;
+		DateType jd;
 
 		if (date >= 2299161L) {	/* Gregorian calendar correction */
 			gcorr = (int)(((date - 1867216L) - 0.25) / 36524.25);
@@ -3370,7 +3369,7 @@ r61() in order to obtain proper sign extension. */
 		}
 		date += 1524;
 		jy = (int)(6680 + ((date - 2439870L) - 122.1) / 365.25);
-		jd = (WFDB_Date)(365L * jy + (0.25*jy));
+		jd = (DateType)(365L * jy + (0.25*jy));
 		jm = (int)((date - jd) / 30.6001);
 		d = date - jd - (int)(30.6001*jm);
 		if ((m = jm - 1) > 12) m -= 12;
@@ -3385,7 +3384,7 @@ r61() in order to obtain proper sign extension. */
 	{
 		char *mp, *yp;
 		int d, m, y, gcorr, jm, jy;
-		WFDB_Date date;
+		DateType date;
 
 		if ((mp = strchr(string, '/')) == NULL || (yp = strchr(mp + 1, '/')) == NULL ||
 			(d = strtol(string, NULL, 10)) < 1 || d > 31 ||
@@ -3394,7 +3393,7 @@ r61() in order to obtain proper sign extension. */
 			return (0L);
 		if (m > 2) { jy = y; jm = m + 1; }
 		else { jy = y - 1; 	jm = m + 13; }
-		if (jy > 0) date = (WFDB_Date)(365.25*jy);
+		if (jy > 0) date = (DateType)(365.25*jy);
 		else date = -(long)(-365.25 * (jy + 0.25));
 		date += (int)(30.6001*jm) + d + 1720995L;
 		if (d + 31L * (m + 12L * y) >= (15 + 31L * (10 + 12L * 1582))) { /* 15/10/1582 */
@@ -3404,10 +3403,10 @@ r61() in order to obtain proper sign extension. */
 		return (date);
 	}
 
-	FINT adumuv(WFDB_Signal s, WFDB_Sample a)
+	FINT adumuv(SignalType s, SampleType a)
 	{
 		double x;
-		WFDB_Gain g = (s < nvsig) ? vsd[s]->info.gain : WFDB_DEFGAIN;
+		GainType g = (s < nvsig) ? vsd[s]->info.gain : WFDB_DEFGAIN;
 
 		if (g == 0.) g = WFDB_DEFGAIN;
 		x = a * 1000. / g;
@@ -3417,10 +3416,10 @@ r61() in order to obtain proper sign extension. */
 			return ((int)(x - 0.5));
 	}
 
-	FSAMPLE muvadu(WFDB_Signal s, int v)
+	FSAMPLE muvadu(SignalType s, int v)
 	{
 		double x;
-		WFDB_Gain g = (s < nvsig) ? vsd[s]->info.gain : WFDB_DEFGAIN;
+		GainType g = (s < nvsig) ? vsd[s]->info.gain : WFDB_DEFGAIN;
 
 		if (g == 0.) g = WFDB_DEFGAIN;
 		x = g * v*0.001;
@@ -3430,10 +3429,10 @@ r61() in order to obtain proper sign extension. */
 			return ((int)(x - 0.5));
 	}
 
-	FDOUBLE aduphys(WFDB_Signal s, WFDB_Sample a)
+	FDOUBLE aduphys(SignalType s, SampleType a)
 	{
 		double b;
-		WFDB_Gain g;
+		GainType g;
 
 		if (s < nvsig) {
 			b = vsd[s]->info.baseline;
@@ -3447,10 +3446,10 @@ r61() in order to obtain proper sign extension. */
 		return ((a - b) / g);
 	}
 
-	FSAMPLE physadu(WFDB_Signal s, double v)
+	FSAMPLE physadu(SignalType s, double v)
 	{
 		int b;
-		WFDB_Gain g;
+		GainType g;
 
 		if (s < nvsig) {
 			b = vsd[s]->info.baseline;
@@ -3479,16 +3478,16 @@ r61() in order to obtain proper sign extension. */
 
 #define BUFLN   4096	/* must be a power of 2, see sample() */
 
-	FSAMPLE sample(WFDB_Signal s, WFDB_Time t)
+	FSAMPLE sample(SignalType s, TimeType t)
 	{
-		static WFDB_Sample v;
-		static WFDB_Time tt;
+		static SampleType v;
+		static TimeType tt;
 		int nsig = (nvsig > nisig) ? nvsig : nisig;
 
 		/* Allocate the sample buffer on the first call. */
 		if (sbuf == NULL) {
 			SALLOC(sbuf, nsig, BUFLN * sizeof(WFDB_Sample));
-			tt = (WFDB_Time)-1L;
+			tt = (TimeType)-1L;
 		}
 
 		/* If the caller requested a sample from an unavailable signal, return
@@ -3553,9 +3552,9 @@ r61() in order to obtain proper sign extension. */
 	{
 		isigclose();
 		osigclose();
-		btime = bdate = nsamples = msbtime = msbdate = msnsamples = (WFDB_Time)0;
-		sfreq = ifreq = ffreq = (WFDB_Frequency)0;
-		pdays = (WFDB_Date)-1;
+		btime = bdate = nsamples = msbtime = msbdate = msnsamples = (TimeType)0;
+		sfreq = ifreq = ffreq = (FrequencyType)0;
+		pdays = (DateType)-1;
 		segments = in_msrec = skewmax = 0;
 		if (dsbuf) {
 			SFREE(dsbuf);
@@ -3583,8 +3582,8 @@ r61() in order to obtain proper sign extension. */
 
 	void wfdb_osflush(void)
 	{
-		WFDB_Group g;
-		WFDB_Signal s;
+		GroupType g;
+		SignalType s;
 		struct ogdata *og;
 		struct osdata *os;
 

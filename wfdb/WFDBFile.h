@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "wfdblib.h"
 #include <string>
 #include <filesystem>
@@ -70,8 +70,120 @@ namespace wfdb {
 		{
 			return new Context(paths);
 		}
+		std::vector<_path_component> &pathList()
+		{
+			return _path_list;
+		}
+		/* wfdb_addtopath adds the path component of its string argument (i.e.
+everything except the file name itself) to the WFDB path, inserting it
+there if it is not already in the path.  If the first component of the WFDB
+path is '.' (the current directory), the new component is moved to the second
+position; otherwise, it is moved to the first position.
+
+wfdb_open calls this function whenever it finds and opens a file.
+
+Since the files comprising a given record are most often kept in the
+same directory, this strategy improves the likelihood that subsequent
+files to be opened will be found in the first or second location wfdb_open
+checks.
+
+If the current directory (.) is at the head of the WFDB path, it remains there,
+so that wfdb_open will continue to find the user's own files in preference to
+like-named files elsewhere in the path.  If this behavior is not desired, the
+current directory should not be specified initially as the first component of
+the WFDB path.
+ */
+
+		void addPath(const char *s)
+		{
+			const char *p;
+
+
+			if (s == nullptr || *s == '\0') return;
+
+			/* Start at the end of the string and search backwards for a directory
+			   separator (accept any of the possible separators). */
+			for (p = s + strlen(s) - 1; p >= s &&
+				*p != '/' && *p != '\\' && *p != ':'; p--)
+				;
+
+			/* A path component specifying the root directory must be treated as a
+			   special case;  normally the trailing directory separator is not
+			   included in the path component, but in this case there is nothing
+			   else to include. */
+			if (p == s && (*p == '/' || *p == '\\' || *p == ':')) p++;
+
+			if (p < s) return;		/* argument did not contain a path component */
+
+			const std::string in(s, p - s);
+			std::vector<_path_component>::iterator c0 = _path_list.begin();
+			while (c0 != _path_list.end()) {
+				if (c0->prefix == in) {
+					if (in == ".") return;
+					break;
+				}
+				++c0;
+			}
+			_path_component c1;
+			if (c0 == _path_list.end()) {
+				/* path component of s not in WFDB path -- make a new node for it */
+				c1.prefix = in;
+				c1.type = (c1.prefix.find("://") != std::string::npos) ? WFDB_NET : WFDB_LOCAL;
+			}
+			if (_path_list[0].prefix == ".")
+			{
+				_path_list.insert(_path_list.begin() + 1, c1);
+			}
+			else
+			{
+				_path_list.insert(_path_list.begin(), c1);
+			}
+		}
+		/* The wfdb_error function handles error messages, normally by printing them
+on the standard error output.  Its arguments can be any set of arguments which
+would be legal for printf, i.e., the first one is a format string, and any
+additional arguments are values to be filled into the '%*' placeholders
+in the format string.  It can be silenced by invoking wfdbquiet(), or
+re-enabled by invoking wfdbverbose().
+
+The function wfdberror (without the underscore) returns the most recent error
+message passed to wfdb_error (even if output was suppressed by wfdbquiet).
+This feature permits programs to handle errors somewhat more flexibly (in
+windowing environments, for example, where using the standard error output may
+be inappropriate).
+*/
+
+
+		const char* error()
+		{
+			if (!_errorFlag)
+				wfdb_asprintf(&_errorMessage,
+					"WFDB library version %d.%d.%d (%s).\n",
+					WFDB_MAJOR, WFDB_MINOR, WFDB_RELEASE, __DATE__);
+			if (_errorMessage)
+				return (_errorMessage);
+			return ("WFDB: cannot allocate memory for error message");
+		}
+
+		void error(const char *format, ...)
+		{
+			va_list arguments;
+			_errorFlag = 1;
+			va_start(arguments, format);
+			wfdb_vasprintf(&_errorMessage, format, arguments);
+			va_end(arguments);
+
+			/* standard variant: use stderr output */
+			if (verbose()) {
+				(void)fprintf(stderr, "%s", error());
+				(void)fflush(stderr);
+			}
+		}
+
 	private:
 		std::vector<_path_component> _path_list;
+		int _errorFlag;
+		char *_errorMessage;
 
 		explicit Context(const char * paths = nullptr)
 		{
@@ -94,7 +206,7 @@ namespace wfdb {
 		{
 			std::string env;
 
-			env = "WFDB=" + wfdb_path;
+			env = "WFDB=" + _path;
 			_putenv(env.c_str());
 
 			if (getenv("WFDBCAL") == nullptr) {
@@ -136,7 +248,7 @@ namespace wfdb {
 				}
 			}
 			if (*p == '@') {
-				wfdb_error("getwfdb: files nested too deeply\n");
+				error("getwfdb: files nested too deeply\n");
 				p = "";
 			}
 			return (p);
@@ -182,81 +294,7 @@ namespace wfdb {
 			return (0);
 		}
 
-		/* wfdb_addtopath adds the path component of its string argument (i.e.
-		everything except the file name itself) to the WFDB path, inserting it
-		there if it is not already in the path.  If the first component of the WFDB
-		path is '.' (the current directory), the new component is moved to the second
-		position; otherwise, it is moved to the first position.
 
-		wfdb_open calls this function whenever it finds and opens a file.
-
-		Since the files comprising a given record are most often kept in the
-		same directory, this strategy improves the likelihood that subsequent
-		files to be opened will be found in the first or second location wfdb_open
-		checks.
-
-		If the current directory (.) is at the head of the WFDB path, it remains there,
-		so that wfdb_open will continue to find the user's own files in preference to
-		like-named files elsewhere in the path.  If this behavior is not desired, the
-		current directory should not be specified initially as the first component of
-		the WFDB path.
-		 */
-
-		void _addToPath(const char *s)
-		{
-			const char *p;
-
-
-			if (s == nullptr || *s == '\0') return;
-
-			/* Start at the end of the string and search backwards for a directory
-			   separator (accept any of the possible separators). */
-			for (p = s + strlen(s) - 1; p >= s &&
-				*p != '/' && *p != '\\' && *p != ':'; p--)
-				;
-
-			/* A path component specifying the root directory must be treated as a
-			   special case;  normally the trailing directory separator is not
-			   included in the path component, but in this case there is nothing
-			   else to include. */
-			if (p == s && (*p == '/' || *p == '\\' || *p == ':')) p++;
-
-			if (p < s) return;		/* argument did not contain a path component */
-
-			const int i = p - s;
-
-			for (std::vector<_path_component>::iterator c0=_path_list.begin(); c0!=_path_list.end(); ++ c0){
-				if (c0->prefix.compare(0, i, s) == 0) {
-
-					if (c0 == c1 || (c1->prev == c0 && c0->prefix == "."))
-						return; /* no changes needed, quit */
-						/* path component of s is already in WFDB path -- unlink its node */
-					if (c1->next) (c1->next)->prev = c1->prev;
-					if (c1->prev) (c1->prev)->next = c1->next;
-					break;
-				}
-			}
-			if (!c1) {
-				/* path component of s not in WFDB path -- make a new node for it */
-				c1 = new wfdb_path_component;
-				c1->prefix = std::string(s, p - s);
-				if (c1->prefix.find("://") != std::string::npos) c1->type = WFDB_NET;
-				else c1->type = WFDB_LOCAL;
-			}
-			/* (Re)link the unlinked node. */
-			if (c0->prefix == ".") {  /* skip initial "." if present */
-				c1->prev = c0;
-				if ((c1->next = c0->next) != nullptr)
-					(c1->next)->prev = c1;
-				c0->next = c1;
-			}
-			else { /* no initial ".";  insert the node at the head of the path */
-				wfdb_path_list = c1;
-				c1->prev = nullptr;
-				c1->next = c0;
-				c0->prev = c1;
-			}
-		}
 		std::string _path;
 		std::string _pathInit;
 		bool _verbose;
@@ -265,14 +303,13 @@ namespace wfdb {
 	{
 		Context* _context;
 	public:
-		LocalFile(Context * context):_context(context)
-		{			
+		explicit LocalFile(Context * context): _context(context), irec{}
+		{
 		}
 
 		std::string wfdb_filename;
 
 		/* wfdbfile returns the pathname or URL of a WFDB file. */
-
 		const char* wfdbfile(char *s, char *record)
 		{
 			WFDB_FILE *ifile;
@@ -406,49 +443,6 @@ namespace wfdb {
 			return (length);
 		}
 
-		/* The wfdb_error function handles error messages, normally by printing them
-		on the standard error output.  Its arguments can be any set of arguments which
-		would be legal for printf, i.e., the first one is a format string, and any
-		additional arguments are values to be filled into the '%*' placeholders
-		in the format string.  It can be silenced by invoking wfdbquiet(), or
-		re-enabled by invoking wfdbverbose().
-
-		The function wfdberror (without the underscore) returns the most recent error
-		message passed to wfdb_error (even if output was suppressed by wfdbquiet).
-		This feature permits programs to handle errors somewhat more flexibly (in
-		windowing environments, for example, where using the standard error output may
-		be inappropriate).
-		*/
-
-		int error_flag;
-		char *error_message;
-
-		const char* wfdberror(void)
-		{
-			if (!error_flag)
-				wfdb_asprintf(&error_message,
-					"WFDB library version %d.%d.%d (%s).\n",
-					WFDB_MAJOR, WFDB_MINOR, WFDB_RELEASE, __DATE__);
-			if (error_message)
-				return (error_message);
-			return ("WFDB: cannot allocate memory for error message");
-		}
-
-		void wfdb_error(const char *format, ...)
-		{
-			va_list arguments;
-
-			error_flag = 1;
-			va_start(arguments, format);
-			wfdb_vasprintf(&error_message, format, arguments);
-			va_end(arguments);
-
-			/* standard variant: use stderr output */
-			if (ErrorPrint) {
-				(void)fprintf(stderr, "%s", wfdberror());
-				(void)fflush(stderr);
-			}
-		}
 
 		/* The wfdb_fprintf function handles all formatted output to files.  It is
 		used in the same way as the standard fprintf function, except that its first
@@ -590,25 +584,24 @@ namespace wfdb {
 				return (wfdb_fopen(wfdb_filename.c_str(), AB));
 			}
 
-			/* Parse the WFDB path if not done previously. */
-			if (wfdb_path_list == nullptr) (void)getwfdb();
-
 			/* If the filename begins with 'http://' or 'https://', it's a URL.  In
 			   this case, don't search the WFDB path, but add its parent directory
 			   to the path if the file can be read. */
 			if (r.compare(0, 7,"http://") == 0 || r.compare(0, 8, "https://") == 0) {
 				if ((ifile = wfdb_fopen(wfdb_filename.c_str(), RB)) != nullptr) {
 					/* Found it! Add its path info to the WFDB path. */
-					wfdb_addtopath(wfdb_filename.c_str());
+					_context->addPath(wfdb_filename.c_str());
 					return (ifile);
 				}
 			}
 
-			for (struct wfdb_path_component* c0 = wfdb_path_list; c0; c0 = c0->next)
+			for (std::vector<_path_component>::iterator it = _context->pathList().begin(); it!=_context->pathList().end(); ++it)
 			{
+				struct _path_component c0 = *it;
+			
 				std::string long_filename;
 				std::string buf;
-				const char* wfdb = c0->prefix.c_str();
+				const char* wfdb = c0.prefix.c_str();
 				while (*wfdb) {
 					if (*wfdb == '%') {
 						/* Perform substitutions in the WFDB path where '%' is found */
@@ -642,8 +635,8 @@ namespace wfdb {
 				   the native directory separator is '\' (MS-DOS) or ':' (Macintosh).
 				*/
 				if (!buf.empty() &&
-					c0->type == WFDB_NET && 
-					*buf.rbegin()!= DSEP && (c0->type == WFDB_NET || *buf.rbegin()!= ':'))
+					c0.type == WFDB_NET && 
+					*buf.rbegin()!= DSEP && (c0.type == WFDB_NET || *buf.rbegin()!= ':'))
 				{
 					buf.append(1, DSEP);
 				}
@@ -652,7 +645,7 @@ namespace wfdb {
 				wfdb_filename= spr1(buf.c_str(), type);
 				if ((ifile = wfdb_fopen(wfdb_filename.c_str(), RB)) != NULL) {
 					/* Found it! Add its path info to the WFDB path. */
-					wfdb_addtopath(wfdb_filename.c_str());
+					_context->addPath(wfdb_filename.c_str());
 					return (ifile);
 				}
 				/* Not found -- try again, using an alternate form of the name,
@@ -660,9 +653,9 @@ namespace wfdb {
 				long_filename = wfdb_filename;
 				
 				wfdb_filename= spr2(buf.c_str(), type);
-				if (wfdb_filename.compare(long_filename) &&
-					(ifile = wfdb_fopen(wfdb_filename.c_str(), RB)) != NULL) {
-					wfdb_addtopath(wfdb_filename.c_str());
+				if (wfdb_filename!=long_filename &&
+					(ifile = wfdb_fopen(wfdb_filename.c_str(), RB)) != nullptr) {
+					_context->addPath(wfdb_filename.c_str());
 					return (ifile);
 				}
 			}
@@ -684,7 +677,7 @@ namespace wfdb {
 					('a' <= *p && *p <= 'z') || ('A' <= *p && *p <= 'Z'))
 					p++;
 				else {
-					wfdb_error("init: illegal character %d in %s name\n", *p, s);
+					_context->error("init: illegal character %d in %s name\n", *p, s);
 					return (-1);
 				}
 			} while (*p);

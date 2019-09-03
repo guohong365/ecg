@@ -1,4 +1,4 @@
-/* file: annot.c	G. Moody       	 13 April 1989
+﻿/* file: annot.c	G. Moody       	 13 April 1989
 			Last revised:   23 January 2018  	wfdblib 10.6.0
 WFDB library functions for annotations
 
@@ -135,7 +135,7 @@ static struct iadata {
     WFDB_Anninfo info;	   	/* input annotator information */
     WFDB_Annotation ann;	/* next annotation to be returned by getann */
     WFDB_Annotation pann; 	/* pushed-back annotation from ungetann */
-    WFDB_Frequency afreq;	/* time resolution, in ticks/second */
+    FrequencyType afreq;	/* time resolution, in ticks/second */
     unsigned word;		/* next word from the input file */
     int ateof;			/* EOF-reached indicator */
     unsigned char auxstr[AUXBUFLEN]; /* aux string buffer */
@@ -150,7 +150,7 @@ static struct iadata {
     double pann_tt;		/* unscaled annotation time of 'pann' */
     double prev_tt;		/* unscaled time of the last annotation
 				   returned by getann */
-    WFDB_Time prev_time;	/* sample number of the last annotation
+    TimeType prev_time;	/* sample number of the last annotation
 				   returned by getann */
 } **iad;
 
@@ -161,7 +161,7 @@ static struct oadata {
     WFDB_FILE *file;		/* file pointer for output annotation file */
     WFDB_Anninfo info;		/* output annotator information */
     WFDB_Annotation ann;	/* most recent annotation written by putann */
-    WFDB_Frequency afreq;	/* time resolution, in ticks/second */
+    FrequencyType afreq;	/* time resolution, in ticks/second */
     int seqno;			/* annotation serial number (AHA format only)*/
     char *rname;		/* record with which annotator is associated */
     char out_of_order;		/* if >0, one or more annotations written by
@@ -169,7 +169,7 @@ static struct oadata {
 				   chan) order */
     char table_written;		/* if >0, table has been written */
 } **oad;
-static WFDB_Frequency oafreq;	/* time resolution in ticks/sec for newly-
+static FrequencyType oafreq;	/* time resolution in ticks/sec for newly-
 				   created output annotators */
 
 /* Local functions (for the use of other functions in this module only). */
@@ -179,9 +179,9 @@ static WFDB_Frequency oafreq;	/* time resolution in ticks/sec for newly-
 /* Round a double to the nearest WFDB_Time, with halfway cases always
    rounded up.  (For example, round_to_time(10.5) is 11, but
    round_to_time(-10.5) is -10.) */
-static WFDB_Time round_to_time(double x)
+static TimeType round_to_time(double x)
 {
-    WFDB_Time t;
+    TimeType t;
 
     if (x >= 0) {
 	if (x >= WFDB_TIME_MAX)
@@ -203,12 +203,12 @@ static WFDB_Time round_to_time(double x)
     }
 }
 
-static int get_ann_table(WFDB_Annotator i)
+static int get_ann_table(AnnotatorType i)
 {
     char *p1, *p2, *s1 = NULL, *s2 = NULL;
     int a;
     WFDB_Annotation annot;
-    WFDB_Frequency sfreq;
+    FrequencyType sfreq;
 
     iad[i]->tmul = 1.0;
     iad[i]->afreq = 0.0;
@@ -253,7 +253,7 @@ static char modified[ACMAX+1];	/* modified[i] is non-zero if setannstr() or
 				   setanndesc() has modified the mnemonic or
 				   description for annotation type i */   
 
-static int put_ann_table(WFDB_Annotator i)
+static int put_ann_table(AnnotatorType i)
 {
     int a, flag = 0, n;
     char buf[256], *str = NULL;
@@ -455,7 +455,7 @@ FINT annopen(char *record, WFDB_Anninfo *aiarray, unsigned int nann)
 }
 
 /* getann: read an annotation from annotator n into *annot */
-FINT getann(WFDB_Annotator n, WFDB_Annotation *annot)
+FINT getann(AnnotatorType n, WFDB_Annotation *annot)
 {
     int a, len;
     struct iadata *ia;
@@ -527,7 +527,7 @@ FINT getann(WFDB_Annotator n, WFDB_Annotation *annot)
 	}
 	a = ia->word >> 8;		 /* AHA annotation code */
 	ia->ann.anntyp = ammap(a);	 /* convert to MIT annotation code */
-	ia->ann_tt = (WFDB_Time)wfdb_g32(ia->file);  /* time of annotation */
+	ia->ann_tt = (TimeType)wfdb_g32(ia->file);  /* time of annotation */
 	if (wfdb_g16(ia->file) <= 0)	 /* serial number (starts at 1) */
 	    wfdb_error("getann: unexpected annot number in annotator %s\n",
 		       ia->info.name);
@@ -560,7 +560,7 @@ FINT getann(WFDB_Annotator n, WFDB_Annotation *annot)
 }
 
 /* ungetann: push back an annotation into an input stream */
-FINT ungetann(WFDB_Annotator n, WFDB_Annotation *annot)
+FINT ungetann(AnnotatorType n, WFDB_Annotation *annot)
 {
     if (n >= niaf || iad[n] == NULL) {
 	wfdb_error("ungetann: annotator %d is not initialized\n", n);
@@ -582,7 +582,7 @@ FINT ungetann(WFDB_Annotator n, WFDB_Annotation *annot)
 }
 
 /* putann: write annotation at annot to annotator n */
-FINT putann(WFDB_Annotator n, WFDB_Annotation *annot)
+FINT putann(AnnotatorType n, WFDB_Annotation *annot)
 {
     unsigned annwd;
     unsigned char *ap;
@@ -593,7 +593,7 @@ FINT putann(WFDB_Annotator n, WFDB_Annotation *annot)
 	wfdb_error("putann: can't write annotation file %d\n", n);
 	return (-2);
     }
-	const WFDB_Time t = annot->time;
+	const TimeType t = annot->time;
     if (!oa->table_written) {
 	oa->table_written = 1;
 	if (put_ann_table(n) < 0)
@@ -699,11 +699,11 @@ FINT putann(WFDB_Annotator n, WFDB_Annotation *annot)
 
 /* iannsettime: seek so that for the next annotation read from each input
    annotator, anntime >= t */
-FINT iannsettime(WFDB_Time t)
+FINT iannsettime(TimeType t)
 {
     int stat = 0, niavalid = niaf;
     WFDB_Annotation tempann;
-    WFDB_Annotator i;
+    AnnotatorType i;
 
     /* Handle negative arguments as equivalent positive arguments. */
     if (t < 0L) t = -t;
@@ -957,7 +957,7 @@ FINT setanndesc(int code, char *string)
 
 
 /*  setafreq: set time resolution for output annotation files */
-FVOID setafreq(WFDB_Frequency f)
+FVOID setafreq(FrequencyType f)
 {
     oafreq = f;
 }
@@ -969,10 +969,10 @@ FFREQUENCY getafreq(void)
 }
 
 /* setiafreq: set time resolution for input annotations */
-FVOID setiafreq(WFDB_Annotator n, WFDB_Frequency f)
+FVOID setiafreq(AnnotatorType n, FrequencyType f)
 {
     struct iadata *ia;
-    WFDB_Frequency sfreq;
+    FrequencyType sfreq;
 
     if (n < niaf && (ia = iad[n]) != NULL) {
 	if (f > 0.0 && ia->afreq > 0.0)
@@ -989,7 +989,7 @@ FVOID setiafreq(WFDB_Annotator n, WFDB_Frequency f)
 }
 
 /* getiafreq: return time resolution for input annotations */
-FFREQUENCY getiafreq(WFDB_Annotator n)
+FFREQUENCY getiafreq(AnnotatorType n)
 {
     struct iadata *ia;
 
@@ -1006,7 +1006,7 @@ FFREQUENCY getiafreq(WFDB_Annotator n)
 
 /* getiaorigfreq: return the original time resolution of an input
    annotation file */
-FFREQUENCY getiaorigfreq(WFDB_Annotator n)
+FFREQUENCY getiaorigfreq(AnnotatorType n)
 {
     struct iadata *ia;
 
@@ -1017,7 +1017,7 @@ FFREQUENCY getiaorigfreq(WFDB_Annotator n)
 }
 
 /* iannclose: close input annotation file n */
-FVOID iannclose(WFDB_Annotator n)
+FVOID iannclose(AnnotatorType n)
 {
     struct iadata *ia;
 
@@ -1036,7 +1036,7 @@ FVOID iannclose(WFDB_Annotator n)
 }
 
 /* oannclose: close output annotation file n */
-FVOID oannclose(WFDB_Annotator n)
+FVOID oannclose(AnnotatorType n)
 {
     int i;
     char *cmdbuf = NULL;
@@ -1180,7 +1180,7 @@ void wfdb_oaflush(void)
 
 void wfdb_anclose(void)
 {
-    WFDB_Annotator an;
+    AnnotatorType an;
 
     for (an = niaf; an != 0; an--)
 	iannclose(an-1);

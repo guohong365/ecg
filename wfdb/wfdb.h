@@ -1,4 +1,4 @@
-/* file: wfdb.h		G. Moody	13 June 1983
+﻿/* file: wfdb.h		G. Moody	13 June 1983
 			Last revised: 8 December 2017   	wfdblib 10.6.0
 WFDB library type, constant, structure, and function interface definitions
 _______________________________________________________________________________
@@ -34,19 +34,17 @@ _______________________________________________________________________________
 #define WFDB_MAJOR   10
 #define WFDB_MINOR   6
 #define WFDB_RELEASE 0
-#define WFDB_NETFILES 0	/* if 1, library includes code for HTTP, FTP clients */
-#define WFDB_NETFILES_LIBCURL 1
 
 
 /* Simple data types */
-typedef int	     WFDB_Sample;   /* units are adus */
-typedef long 	     WFDB_Time;	    /* units are sample intervals */
-typedef long	     WFDB_Date;	    /* units are days */
-typedef double	     WFDB_Frequency;/* units are Hz (samples/second/signal) */
-typedef double	     WFDB_Gain;	    /* units are adus per physical unit */
-typedef unsigned int WFDB_Group;    /* signal group number */
-typedef unsigned int WFDB_Signal;   /* signal number */
-typedef unsigned int WFDB_Annotator;/* annotator number */
+typedef int	     SampleType;   /* units are adus */
+typedef long 	     TimeType;	    /* units are sample intervals */
+typedef long	     DateType;	    /* units are days */
+typedef double	     FrequencyType;/* units are Hz (samples/second/signal) */
+typedef double	     GainType;	    /* units are adus per physical unit */
+typedef unsigned int GroupType;    /* signal group number */
+typedef unsigned int SignalType;   /* signal number */
+typedef unsigned int AnnotatorType;/* annotator number */
 
 /* The following macros can be used to determine the ranges of the
    above data types.  You will also need to include <limits.h> and/or
@@ -143,9 +141,9 @@ struct WFDB_siginfo {	/* signal information structure */
     char* fname;	/* filename of signal file */
     char *desc;		/* signal description */
     char *units;	/* physical units (mV unless otherwise specified) */
-    WFDB_Gain gain;	/* gain (ADC units/physical unit, 0: uncalibrated) */
-    WFDB_Sample initval; 	/* initial value (that of sample number 0) */
-    WFDB_Group group;	/* signal group number */
+    GainType gain;	/* gain (ADC units/physical unit, 0: uncalibrated) */
+    SampleType initval; 	/* initial value (that of sample number 0) */
+    GroupType group;	/* signal group number */
     int fmt;		/* format (8, 16, etc.) */
     int spf;		/* samples per frame (>1 for oversampled signals) */
     int bsize;		/* block size (for character special files only) */
@@ -171,8 +169,7 @@ struct WFDB_anninfo {	/* annotator information structure */
 };
 
 struct WFDB_ann {	/* annotation structure */
-    WFDB_Time time;	/* annotation time, in sample intervals from
-			   the beginning of the record */
+    TimeType time;	/* annotation time, in sample intervals from the beginning of the record */
     char anntyp;	/* annotation type (< ACMAX, see <wfdb/ecgcodes.h> */
     signed char subtyp;	/* annotation subtype */
     unsigned char chan;	/* channel number */
@@ -182,8 +179,8 @@ struct WFDB_ann {	/* annotation structure */
 
 struct WFDB_seginfo {	/* segment record structure */
     char recname[WFDB_MAXRNL+1];   /* segment name */
-    WFDB_Time nsamp;		   /* number of samples in segment */
-    WFDB_Time samp0;		   /* sample number of first sample */
+    TimeType nsamp;		   /* number of samples in segment */
+    TimeType samp0;		   /* sample number of first sample */
 };
 
 /* Composite data types */
@@ -209,13 +206,13 @@ typedef struct WFDB_seginfo WFDB_Seginfo;
 #ifndef _WINDLL	/* for everything *except* MS Windows applications */
 typedef char *FSTRING;
 typedef const char *FCONSTSTRING;
-typedef WFDB_Date FDATE;
+typedef DateType FDATE;
 typedef double FDOUBLE;
-typedef WFDB_Frequency FFREQUENCY;
+typedef FrequencyType FFREQUENCY;
 typedef int FINT;
 typedef long FLONGINT;
-typedef WFDB_Sample FSAMPLE;
-typedef WFDB_Time FSITIME;
+typedef SampleType FSAMPLE;
+typedef TimeType FSITIME;
 typedef void FVOID;
 #else		
 #ifndef _WIN32	/* for 16-bit MS Windows applications using the WFDB DLL */

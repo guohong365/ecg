@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "wfdb.h"
 
 
@@ -180,30 +180,5 @@ extern void wfdb_oaflush(void);
 #if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif
-
-#else        /* declare only function return types for non-ANSI C compilers */
-
-extern char *wfdb_getirec();
-extern int wfdb_fclose(), wfdb_checkname(), wfdb_g16(), wfdb_parse_path(),
-    wfdb_fprintf();
-extern long wfdb_g32();
-extern void wfdb_striphea(), wfdb_p16(), wfdb_p32(), wfdb_addtopath(),
-    wfdb_setirec(), wfdb_sampquit(), wfdb_sigclose(),
-    wfdb_osflush(), wfdb_freeinfo(), wfdb_oinfoclose(),
-    wfdb_anclose(), wfdb_oaflush();
-extern WFDB_FILE *wfdb_open(), *wfdb_fopen();
-
-extern char *wfdb_fgets();
-extern int wfdb_feof(), wfdb_ferror(), wfdb_fflush(), wfdb_fseek(),
-    wfdb_getc(), wfdb_putc();
-extern long wfdb_ftell();
-extern size_t wfdb_fread(), wfdb_fwrite();
-extern void wfdb_clearerr();
-
-/* Some non-ANSI C libraries (e.g., version 7, BSD 4.2) lack an implementation
-   of strtok(); define NOSTRTOK to compile the portable version in wfdbio.c. */
-# ifdef NOSTRTOK
-extern char *strtok();
-# endif
 
 #endif
